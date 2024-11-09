@@ -1,0 +1,9 @@
+go|north,south,east,west,down|
+take|flashlight,mushroom|
+eat|cake|
+grink|liquid|
+list|items|
+drop|items|
+show|location|
+exit||
+quit||
