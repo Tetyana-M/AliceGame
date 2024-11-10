@@ -1,0 +1,6 @@
+Rabbit Hole|A dark, narrow entrance leading down into Wonderland. Once you descend, there's no going back.|down-Hall of Doors,|
+Hall of Doors|A grand hallway filled with doors of various sizes.|south-Garden,east-Tea Party,north-Safe Room|
+Garden|A beautiful garden with vibrant flowers and curious creatures.|north-Hall of Doors,east-Queen's Court|
+Tea Party|A long table set for tea, complete with mismatched teapots, cups, and saucers.|west-Hall of Doors,south-Queen's Court|
+Queen's Court|An opulent courtroom where the Queen of Hearts rules.||
+Safe Room|Safe storage room.|south-Hall of Doors|
