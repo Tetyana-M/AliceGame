@@ -8,11 +8,8 @@
 #include <iostream>
 #include <memory>
 
-using namespace std;
-
 Game::Game() : currentLocation(nullptr), control(new Control(*this))
 {
-    //control = new Control(*this);
     loadGameData();
     // Set initial location to "Rabbit Hole", which is the first item on the 
     // list of locations.
@@ -29,15 +26,25 @@ Game::Game() : currentLocation(nullptr), control(new Control(*this))
 
 void Game::play() 
 {
-    cout << "\nWelcome to Wonderland! Your goal is to find and collect treasures." << endl;
-    cout << "You are at: " << currentLocation->getName() << endl;
-    control->startGame();
+    cout << "\nWelcome, dear Alice, to the land of whimsy and wonder!\n";
+    cout << "Your quest is clear: gather all treasures scattered across Wonderland and\n";
+    cout << "deliver them to the Safe Room. But beware! Only when all items are\n";
+    cout << "safely placed in the Safe Room and you find yourself at the Queen's Court\n";
+    cout << "shall you be deemed victorious. Fail to secure every treasure, and alas,\n";
+    cout << "even if you reach the Queens Court, the game is lost. Good luck, Alice!\n\n";
+
+    cout << "\nYou are at: " << currentLocation->getName() << endl;
     string command;
     while (true)
     {
-        cout << "Enter command: ";
+        cout << "\nEnter command: ";
         getline(cin, command);
         control->processCommand(command);
+
+        if (isEndGame()) 
+        {
+            break; // End the game if win or lose conditions are met
+        }
     }
 }
 
@@ -45,24 +52,15 @@ void Game::loadGameData()
 {
     loadLocations();
     loadControl();
-    //loadItems();
+    loadItems();
     loadCharacters();
 }
 
-/**
- * The loadLocations() function reads data from "locations.txt" to create and initialize
- * Location objects in the locations vector. Each line in the file represents a location
- * with a unique name, description, and a list of directional connections to other locations.
- * 
- * Expected file format:
- * Each line in "locations.txt" should be structured as follows:
- * 
- *     LocationName|Description|Direction-ConnectedLocation,Direction-ConnectedLocation,...|
- */
 void Game::loadLocations() 
 {
     ifstream file("locations.txt");
-    if (!file.is_open()) {
+    if (!file.is_open()) 
+    {
         cerr << "Error: Could not open locations.txt" << endl;
         return;
     }
@@ -148,17 +146,15 @@ void Game::loadLocations()
         index++;
     }
 }
-/**
- * 
- */
+
 void Game::loadControl()
 {
     ifstream file("control.txt");
-    if (!file) {
+    if (!file) 
+    {
         cerr << "Error: Could not open control.txt" << endl;
         return;
     }
-
 
     string line;
     int actionCount = 0;
@@ -200,37 +196,69 @@ void Game::loadControl()
             }
         }
     }
-    //control->showActions();
-}
-
-const vector<Location*>& Game::getLocations() const 
-{
-    return locations;
 }
 
 Location* Game::getCurrentLocation() const 
 {
     return currentLocation;
 }
-/**
- * 
- */
+
 void Game::setCurrentLocation(Location* location)
 {
     currentLocation = location;
 }
-/* 
-void Game::loadItems() {
-    std::ifstream file("items.txt");
-    std::string line;
-    while (std::getline(file, line)) {
-        items.push_back(std::make_unique<Item>(line)); 
+ 
+void Game::loadItems() 
+{
+    ifstream file("items.txt");
+    if (!file) 
+    {
+        cerr << "Error: Could not open items.txt" << endl;
+        return;
+    }
+    string line;
+    while (getline(file, line)) 
+    {
+        istringstream stream(line);
+        string locationName, itemsList;
+
+        // Parse location and items
+        getline(stream, locationName, '|');
+        getline(stream, itemsList, '|');
+
+        // Find location by name
+        Location* location = nullptr;
+        for (const auto& loc : locations) 
+        {
+            if (loc->getName() == locationName) 
+            {
+                location = loc;
+                break;
+            }
+        }
+        if (!location) 
+        {
+            cerr << "Location " << locationName << " not found." << endl;
+            continue;
+        }
+
+        // Add items to the location’s inventory
+        istringstream itemsStream(itemsList);
+        string itemName;
+        while (getline(itemsStream, itemName, ',')) 
+        {
+            Item* item = new Item(itemName);
+            items.push_back(item); 
+            location->getInventory().addItem(item);
+        }
     }
 }
-*/
-void Game::loadCharacters() {
+
+void Game::loadCharacters() 
+{
     ifstream file("characters.txt");
-    if (!file) {
+    if (!file) 
+    {
         cerr << "Error: Could not open characters.txt" << endl;
         return;
     }
@@ -251,11 +279,12 @@ void Game::loadCharacters() {
     while (getline(file, line) && index < characterCount) 
     {
         istringstream stream(line);
-        string name, locationName;
+        string name, locationName, description;
 
         // Parse name, description, and connections.
         getline(stream, name, '|');
         getline(stream, locationName, '|');
+        getline(stream, description, '|');
 
         Location* characterLocation;
 
@@ -271,7 +300,7 @@ void Game::loadCharacters() {
         }
  
         // Create Character objects.
-        Character* newCharacter = new Character(name, characterLocation);
+        Character* newCharacter = new Character(name, characterLocation, description);
         // Add them to characters array.
         characters.push_back(newCharacter);
         // Add character to its location.
@@ -290,4 +319,68 @@ void Game::moveMainCharacter(Location* newLocation)
     mainCharacter->setCurrentLocation(newLocation);
     newLocation->addCharacter(mainCharacter);
     oldLocation->removeCharacter(mainCharacter);
+}
+
+Character* Game::getMainCharacter() const
+{
+    return mainCharacter;
+}
+
+bool Game::isEndGame() 
+{
+    // Identify the Safe Room and Queen's Court by their names
+    Location* safeRoom = nullptr;
+    Location* queensCourt = nullptr;
+    
+    for (const auto& location : locations) 
+    {
+        if (location->getName() == "Safe Room") 
+        {
+            safeRoom = location;
+        } 
+        else if (location->getName() == "Queen's Court") 
+        {
+            queensCourt = location;
+        }
+    }
+
+    if (!safeRoom || !queensCourt) 
+    {
+        cerr << "Error: Safe Room or Queen's Court not found." << endl;
+        return false;
+    }
+
+    // Check if Alice is at the Queen's Court
+    if (mainCharacter->getCurrentLocation() == queensCourt) 
+    {
+        // Check if all items are in the Safe Room
+        bool allItemsInSafeRoom = true;
+        for (const auto& item : items) 
+        {
+            if (safeRoom->getInventory().getItem(item->getName()) == nullptr) 
+            {
+                allItemsInSafeRoom = false;
+                break;
+            }
+        }
+
+        if (allItemsInSafeRoom) 
+        {
+            cout << "\nCongratulations, dear Alice! You have triumphed gloriously!\n";
+            cout << "All treasures rest safely in the Safe Room, and you stand victorious\n";
+            cout << "before the Queen!\n";
+            cout << "\nYou won!\n" << endl;
+            return true; // Win condition met
+        } 
+        else 
+        {
+            cout << "\nAlas, dear Alice, your journey ends in sorrow.\n";
+            cout << "Though you have reached the Queen's Court, not all treasures\n";
+            cout << "rest in the Safe Room. The Queen is displeased...\n";
+            cout << "\nYou lost!\n" << endl;
+            return true; // Lose condition met
+        }
+    }
+    
+    return false; // Game continues
 }

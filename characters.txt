@@ -1,5 +1,5 @@
-Alice|Rabbit Hole|
-White Rabbit|Rabbit Hole|
-Cheshire Cat|Garden|
-Mad Hatter|Tea Party|
-Queen of Hearts|Queen's Court|
+Alice|Rabbit Hole|A curious soul with an unquenchable thirst for wonder.|
+White Rabbit|Rabbit Hole|Perpetually in a hurry darts about with a pocket watch in hand.|
+Cheshire Cat|Garden|This mischievous cat delights in riddles with a grin that lingers long after he vanishes.|
+Mad Hatter|Tea Party|A cheerful and chaotic host, the Mad Hatter pours tea with a flair for nonsense and a hat that’s just as eccentric as he is.|
+Queen of Hearts|Queen's Court|Ruling with a temper as fiery as her hair, the Queen of Hearts commands Wonderland with a single phrase that chills everyones blood: Off with their heads!|

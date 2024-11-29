@@ -3,34 +3,17 @@
 #include <string>
 #include <algorithm>
 
-//using namespace std;
-
 Location::Location(const string& name, const string& description) 
     : name(name), description(description) {}
 
-void Location::describe() const {
+void Location::describe() const 
+{
     cout << "You are in " << name << "." << endl;
 }
 
-void Location::showInfo() const 
+string Location::getDescription()const
 {
-    cout << "Name: " << name << endl;
-    cout << "Description" << description << endl;
-    cout << "Exits: " << exits.size() << endl;
-    string allExits;
-    for (auto it = exits.begin(); it != exits.end(); ++it)
-    {
-        cout << (*it).first  << " to " << (*it).second->getName() << endl;
-    }
-    if(!characters.empty())
-    {
-        cout << "Characters: " << characters.size() << endl;
-        string allCharacters;
-        for (auto it = characters.begin(); it != characters.end(); ++it)
-        {
-            cout << (*it)->getName() << endl;
-        }
-    }/**/
+    return description;
 }
 
 void Location::addExit(const string& direction, Location* location) 
@@ -43,7 +26,7 @@ Location* Location::getExit(const std::string& direction)
     return exits.count(direction) ? exits[direction] : nullptr;
 }
 
-string Location::getName() 
+string Location::getName() const
 {
     return name;
 }
@@ -62,4 +45,33 @@ void Location::removeCharacter(Character* character)
 vector<Character*> Location::getCharacters() const 
 {
     return characters;
+}
+
+Inventory& Location::getInventory()
+{
+    return inventory;
+}
+
+void Location::showInventory()
+{
+    cout << name << " ";
+    inventory.showInventory();
+}
+
+vector<string> Location::getExits()
+{
+    vector<string> allExits;
+    for (auto it = exits.begin(); it != exits.end(); ++it)
+    {
+        allExits.push_back((*it).first);
+    } 
+    return allExits;
+}
+
+void Location::showCharacters()
+{
+    for (auto it = characters.begin(); it != characters.end(); ++it)
+    {
+        cout << (*it)->getName() << endl;
+    } 
 }
