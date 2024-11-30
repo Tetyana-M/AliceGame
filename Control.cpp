@@ -5,18 +5,6 @@
 
 Control::Control(Game& game) : game(game) {}
 
-void Control::startGame() 
-{
-    // At the start of the game set carrunt location to Rabbit Hole.
-    //setCurrentLocation("Rabbit Hole");
-    //std::string input;
-    //std::cout << "Enter an action: ";
-    //while (std::cin >> input) {
-    //    handleInput(input);
-    //    std::cout << "Enter an action: ";
-   // }
-}
-
 void Control::addAction(Action* action) 
 {
     actions.push_back(action);
@@ -24,36 +12,82 @@ void Control::addAction(Action* action)
 
 void Control::executeAction(const Action& action) 
 {
-    if (action.getName() == "exit" || action.getName() == "quit")
+    Location* currentLocation = game.getCurrentLocation();
+    Character* mainCharacter = game.getMainCharacter();
+    string actionName = action.getName();
+    string actionTarget = action.getTarget(); 
+        
+    if (actionName == "exit" || actionName == "quit")
     {
         cout << "\nGood bye!\n" << endl;
         exit(0);
     }
-    else if (action.getName() == "go") 
+    else if (actionName == "help")
     {
-        string targetLocationDirection = action.getTarget(); 
-        Location* currLocation =game.getCurrentLocation();
-        Location* exitLocation = currLocation->getExit(targetLocationDirection);
+        cout << "List of all commands:" << endl;
+        showActions();
+    }
+    else if (actionName == "go") 
+    {
+        Location* exitLocation = currentLocation->getExit(actionTarget);
         if(exitLocation)
         {
             game.setCurrentLocation(exitLocation);
-            cout << "You are at: " << game.getCurrentLocation()->getName() << endl;
+            // Move main character.
+            game.moveMainCharacter(exitLocation);
+            cout << "You are at the " << game.getCurrentLocation()->getName() << endl;
         }
         else
         {
             cout << "You can't go that way." << endl;
         }
-    } 
-    else if (action.getName() == "take") 
+    }
+    else if (actionName == "say")
     {
-        cout << "You take the " << action.getTarget() << ".\n";
-        // Add item to inventory here
-    } 
-    else if (action.getName() == "drop") 
+        vector<Character*> allCharacters = currentLocation->getCharacters();
+        for (auto it = allCharacters.begin(); it != allCharacters.end(); ++it)
+        {
+            Character* character = (*it);
+            if(character->getName() != game.getMainCharacter()->getName())
+            {
+                cout << character->getName() << " says \"" << character->respondToGreeting(actionTarget) << "\"" << endl;
+            }
+        }
+    }
+    else if(actionName == "show")
     {
-        cout << "You drop the " << action.getTarget() << ".\n";
-        // Remove item from inventory here
+        if(actionTarget == "location")
+        {
+            currentLocation->describe();
+        }
+        else if(actionTarget == "characters")
+        {
+            vector<Character*> allCharacters = currentLocation->getCharacters();
+            for (auto it = allCharacters.begin(); it != allCharacters.end(); ++it)
+            {
+                Character* character = (*it);
+                cout << character->getName() << ": " << character->describeSelf() << endl;
+            }
+        }
+        else if(actionTarget == "items")
+        {
+            currentLocation->showInventory();
+            mainCharacter->showInventory();
+        }
+    }
+    else if (actionName == "take") 
+    {
+        mainCharacter->takeItem(actionTarget, currentLocation);
     } 
+    else if (actionName == "drop") 
+    {
+        mainCharacter->dropItem(actionTarget, currentLocation);
+    } 
+    else if (actionName == "describe")
+    {
+        cout << description();
+
+    }
     else 
     {
         cout << "Action not implemented.\n";
@@ -76,7 +110,6 @@ void Control::processCommand(const string& command)
             executeAction(*action);
             actionFound = true;
             break;
-            //action->showInfo();
         }
     }
     if(!actionFound)
@@ -85,17 +118,120 @@ void Control::processCommand(const string& command)
     }
 }
 
-void Control::handleInput(const std::string& input) {
-    if (input == "take") {
-        if (item) {
-            inventory.addItem(item);
-            std::cout << "You took the " << item->getName() << "." << std::endl;
-        }
-    } else {
-        std::cout << "Unknown action!" << std::endl;
-    }
-}
-//void Control::setCurrentLocation(const string& locationName)
-//{
+string Control::description() const 
+{
+    ostringstream description;
 
-//}
+    // Get main character details
+    Character* mainCharacter = game.getMainCharacter();
+    Location* currentLocation = mainCharacter->getCurrentLocation();
+    
+    // Start description with character's name and current location
+    description << "Ah, dear " << mainCharacter->getName() << "! Here you find yourself at the " 
+                << currentLocation->getName() << ".\n" << currentLocation->getDescription() << "\n";
+
+    // List exits
+    const auto& exits = currentLocation->getExits();
+    if (!exits.empty()) 
+    {
+        description << "Look around, and you'll see the path";
+        if (exits.size() > 1) 
+        {
+            description << "s";
+        } 
+        description << " ";
+        bool first = true;
+        for (const auto& exit : exits) 
+        {
+            if (!first) 
+            {
+                description << ", ";
+            }
+            description << exit;
+            first = false;
+        }
+        description << ".\n";
+    } 
+    else 
+    {
+        description << "Alas, there are no exits here—no choice but to linger a while longer.\n";
+    }
+
+    // List other characters at the location
+    const auto& characters = currentLocation->getCharacters();
+    string otherCharacters;
+    bool firstCharacter = true;
+    for (const auto& character : characters) 
+    {
+        if (character != mainCharacter) 
+        { // Exclude main character from the list
+            if (!firstCharacter) 
+            {
+                otherCharacters += ", ";
+            }
+            otherCharacters += character->getName();
+            firstCharacter = false;
+        }
+    }
+    if (!otherCharacters.empty()) 
+    {
+        description << "You are not alone, dear " << mainCharacter->getName() << "! " 
+                    << (characters.size() > 2 ? "In the shadows, we spot " : "With you stands ") 
+                    << otherCharacters << ".\n";
+    }
+
+    // List items in main character's inventory
+    description << "In your pockets, you carry ";
+    const auto& inventoryItems = mainCharacter->getInventory();
+    if (!inventoryItems.empty()) 
+    {
+        bool firstItem = true;
+        for (const auto& item : inventoryItems) 
+        {
+            if (!firstItem) 
+            {
+                description << ", ";
+            }
+            description << item->getName();
+            firstItem = false;
+        }
+    } 
+    else 
+    {
+        description << "nothing but dreams";
+    }
+    description << ".\n";
+
+    // List items available at the location
+    description << "Here at the " << currentLocation->getName() << ", you spy ";
+    const auto& locationItems = currentLocation->getInventory().getInventoryItems();
+    if (!locationItems.empty()) 
+    {
+        bool firstLocationItem = true;
+        for (const auto& item : locationItems) 
+        {
+            if (!firstLocationItem) 
+            {
+                description << ", ";
+            }
+            description << item->getName();
+            firstLocationItem = false;
+        }
+        description << ".\n";
+    } 
+    else 
+    {
+        description << "nothing but whispers and shadows.\n";
+    }
+    
+    return description.str();
+}
+
+void Control::showActions()
+{
+    for (auto it = actions.begin(); it != actions.end(); ++it)
+    {
+        cout << (*it)->getName() << " " << (*it)->getTarget() << endl;
+    }
+
+}
